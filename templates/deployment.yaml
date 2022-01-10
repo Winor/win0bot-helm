@@ -5,9 +5,7 @@ metadata:
   labels:
     {{- include "win0bot-helm.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
-  {{- end }}
+  replicas: 1
   selector:
     matchLabels:
       {{- include "win0bot-helm.selectorLabels" . | nindent 6 }}
@@ -33,20 +31,40 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: 80
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://postgres:{{ include "call-nested" (list . "postgresql" "postgresql.postgres.password") }}@localhost:5432/mydb?schema=public"
+            - name: admins
+              value: {{ .Values.win0bot.admins | quote }}
+            - name: discordToken
+              value: {{ .Values.win0bot.discordToken | quote }}
+            - name: effectiveRoles
+              value: {{ .Values.win0bot.effectiveRoles | quote }}
+            - name: mods
+              value: {{ .Values.win0bot.mods | quote }}
+            - name: prefix
+              value: {{ .Values.win0bot.prefix | quote }}
+            - name: telegramToken
+              value: {{ .Values.win0bot.telegramToken | quote }}
+            - name: voiceChannleJoinMsg
+              value: {{ .Values.win0bot.voiceChannleJoinMsg | quote }}
+            - name: voiceTextChnList
+              value: {{ .Values.win0bot.voiceTextChnList | quote }}
+            {{- if .Values.postgresql.enabled}}
+            - name: POSTGRES_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "call-nested" (list . "postgresql" "postgresql.secretName") }}
+                  key: postgresql-postgres-password
+            - name: POSTGRES_USER
+              value: {{ include "call-nested" (list . "postgresql" "postgresql.username") }}
+            - name: POSTGRESQL_PORT_NUMBER
+              value: {{ .Values.postgresql.containerPorts.postgresql | quote }}
+            - name: POSTGRES_URL
+              value: {{ include "call-nested" (list . "postgresql" "postgresql.primary.fullname") }}
+            {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -58,4 +76,9 @@ spec:
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      volumeMounts:
+      {{- if .Values.persistentvolumeclaim.enabled}}
+        - {{ include "win0bot-helm.fullname" . }}-data
+          mountPath: /app
+      {{- end }}
       {{- end }}
