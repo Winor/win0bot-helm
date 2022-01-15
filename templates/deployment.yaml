@@ -53,16 +53,16 @@ spec:
             - name: voiceTextChnList
               value: {{ .Values.win0bot.voiceTextChnList | quote }}
             {{- if .Values.postgresql.enabled}}
-            - name: POSTGRES_POSTGRES_PASSWORD
+            - name: POSTGRESQL_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "call-nested" (list . "postgresql" "postgresql.secretName") }}
-                  key: postgresql-postgres-password
+                  key: postgresql-password
             - name: POSTGRES_USER
               value: {{ include "call-nested" (list . "postgresql" "postgresql.username") }}
             - name: POSTGRESQL_PORT_NUMBER
               value: {{ .Values.postgresql.containerPorts.postgresql | quote }}
-            - name: POSTGRES_URL
+            - name: POSTGRESQL_URL
               value: {{ include "call-nested" (list . "postgresql" "postgresql.primary.fullname") }}
             {{- end }}
       {{- with .Values.nodeSelector }}
