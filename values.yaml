@@ -19,6 +19,7 @@ win0bot:
   prefix:
   voiceChannleJoinMsg:
   voiceTextChnList:
+  databaseUrl:
 
 
 imagePullSecrets: []

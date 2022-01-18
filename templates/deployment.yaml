@@ -34,8 +34,10 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
+          {{- if not .Values.postgresql.enabled}}
             - name: DATABASE_URL
-              value: "postgresql://postgres:{{ include "call-nested" (list . "postgresql" "postgresql.postgres.password") }}@localhost:5432/mydb?schema=public"
+              value: {{ .Values.win0bot.databaseUrl | quote }}
+          {{- end }}
             - name: admins
               value: {{ .Values.win0bot.admins | quote }}
             - name: discordToken
@@ -63,7 +65,7 @@ spec:
             - name: POSTGRESQL_PORT_NUMBER
               value: {{ .Values.postgresql.containerPorts.postgresql | quote }}
             - name: POSTGRESQL_URL
-              value: {{ include "call-nested" (list . "postgresql" "postgresql.primary.fullname") }}
+              value: {{ include "call-nested" (list . "postgresql" "common.names.fullname") }}
             {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
